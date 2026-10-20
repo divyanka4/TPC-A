@@ -1,0 +1,46 @@
+resources:
+  jobs:
+    TPC_A_daily_pipeline:
+      name: TPC-A_daily_pipeline
+      tasks:
+        - task_key: bronze_ingestion
+          notebook_task:
+            notebook_path: /Workspace/Users/paldivya0222@gmail.com/IAP_Practice_Paper_3/TPC-A/01_bronze_ingestion
+            base_parameters:
+              pipeline_runID: "{{job.run_id}}"
+            source: WORKSPACE
+          max_retries: 2
+          min_retry_interval_millis: 300000
+          disable_auto_optimization: true
+        - task_key: silver_cleaning
+          depends_on:
+            - task_key: bronze_ingestion
+          notebook_task:
+            notebook_path: /Workspace/Users/paldivya0222@gmail.com/IAP_Practice_Paper_3/TPC-A/02_silver_cleaning
+            source: WORKSPACE
+          max_retries: 2
+          min_retry_interval_millis: 900000
+          disable_auto_optimization: true
+        - task_key: gold_build
+          depends_on:
+            - task_key: silver_cleaning
+          notebook_task:
+            notebook_path: /Workspace/Users/paldivya0222@gmail.com/IAP_Practice_Paper_3/TPC-A/03_gold_build
+            source: WORKSPACE
+          max_retries: 1
+          min_retry_interval_millis: 300000
+          disable_auto_optimization: true
+        - task_key: quality_check
+          depends_on:
+            - task_key: gold_build
+          notebook_task:
+            notebook_path: /Workspace/Users/paldivya0222@gmail.com/IAP_Practice_Paper_3/TPC-A/04_data_quality_check
+            source: WORKSPACE
+          min_retry_interval_millis: 900000
+          disable_auto_optimization: true
+      queue:
+        enabled: true
+      parameters:
+        - name: catalog
+          default: tpca
+      performance_target: PERFORMANCE_OPTIMIZED
